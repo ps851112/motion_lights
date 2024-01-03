@@ -33,7 +33,7 @@ action:
   - service: notify.persistent_notification
     data:
       message: >-
-        Entity:{{ (light) }}
+        Entity1:{{ (light) }}
   - service: notify.persistent_notification
     data:
       message: >-
