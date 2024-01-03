@@ -2,7 +2,7 @@ blueprint:
   name: Pauls Motion Lights
   description: Turn on a light when motion is detected.
   domain: automation
-  source_url: https://github.com/home-assistant/core/blob/dev/homeassistant/components/automation/blueprints/motion_light.yaml
+  source_url: https://raw.githubusercontent.com/ps851112/motion_lights/main/motion_lights.yaml
   input:
     motion_entity:
       name: Motion Sensor
