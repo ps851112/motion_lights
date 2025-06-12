@@ -86,7 +86,7 @@ action:
       - conditions:
           - condition: template
             value_template: >-
-              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' and states(!input motion_entity) == 'off' }}
+              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' and states[trigger.entity_id] == 'off' }}
             alias: Confirm Motion Lights is On
         sequence:
           - action: light.turn_off
