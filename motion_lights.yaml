@@ -1,43 +1,97 @@
 blueprint:
-  name: Pauls Motion Lights
+  name: Motion Lights Dimmer
   description: Turn on a light when motion is detected.
   domain: automation
-  source_url: https://raw.githubusercontent.com/ps851112/motion_lights/main/motion_lights.yaml
+  source_url: https://github.com/ps851112/motion_lights/blob/main/motion_lights.yaml
   input:
     motion_entity:
       name: Motion Sensor
       selector:
         entity:
-          domain: binary_sensor
-          device_class: motion
+          filter:
+            domain: binary_sensor
+            device_class: motion
+          multiple: false
     light_target:
       name: Light
       selector:
         target:
           entity:
-            domain: light
-
-
-# If motion is detected within the delay,
-# we restart the script.
+          - domain:
+            - light
 mode: restart
 max_exceeded: silent
-
 trigger:
-  - platform: state
-    entity_id: !input motion_entity
-    from: "off"
-    to: "on"
-
+- trigger: state
+  entity_id: !input motion_entity
+  from: 'off'
+  to: 'on'
+condition:
+  - condition: state
+    entity_id: sensor.someone_home
+    state: home
+  - condition: template
+    value_template: >-
+      {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' }}
 action:
-  - service: notify.persistent_notification
-    data:
-      message: >-
-        Entity1:{{ (light) }}
-  - service: notify.persistent_notification
-    data:
-      message: >-
-        {{ 'switch.'+(states.light.dining_chandelier.name | replace(" ", "_") | lower)+'_motion_lights' }}
-
+  - alias: Light On Action
+    choose:
+      - conditions:
+          - condition: sun
+            after: sunrise
+            before: sunset
+          - condition: template
+            value_template: >-
+              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' }}
+            alias: Confirm Motion Lights is On
+        sequence:
+          - action: light.turn_on
+            data:
+              brightness_pct: 100
+            target: !input light_target
+      - conditions:
+          - condition: sun
+            after: sunset
+            before: sunrise
+          - condition: template
+            value_template: >-
+              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' }}
+            alias: Confirm Motion Lights is On
+        sequence:
+          - action: light.turn_on
+            data:
+              brightness_pct: >-
+                {{ states(((light.entity_id) | replace('light','number'))+'_night_brightness') | int }}
+              transition: 5
+            target: !input light_target
+  - wait_for_trigger:
+      - alias: Confirm Motion Lights is Off
+        trigger: template
+        value_template: >-
+          {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') != 'on' }}
+    timeout:
+      hours: 0
+      minutes: 6
+      seconds: 0
+      milliseconds: 0
+  - if:
+      - condition: template
+        value_template: >-
+          {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') != 'on' }}
+        alias: Confirm Motion Lights is Off
+    then:
+      - stop: Motion Lights disabled.
+  - alias: Light Off Timer
+    choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' and states(!input motion_entity) == 'off' }}
+            alias: Confirm Motion Lights is On
+        sequence:
+          - action: light.turn_off
+            data:
+              transition: 5
+            target: !input light_target
 variables:
   light: !input light_target
