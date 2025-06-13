@@ -65,15 +65,14 @@ action:
               transition: 5
             target: !input light_target
   - wait_for_trigger:
-      - alias: Confirm Motion Lights is Off
-        trigger: template
-        value_template: >-
-          {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') != 'on' }}
-    timeout:
-      hours: 0
-      minutes: 6
-      seconds: 0
-      milliseconds: 0
+      - trigger: state
+        entity_id: !input motion_entity
+        from: "on"
+        to: "off"
+        for:
+          hours: 0
+          minutes: 6
+          seconds: 0
   - if:
       - condition: template
         value_template: >-
@@ -86,7 +85,7 @@ action:
       - conditions:
           - condition: template
             value_template: >-
-              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' and states[trigger.entity_id] == 'off' }}
+              {{ states(((light.entity_id) | replace('light','switch'))+'_motion_lights') == 'on' }}
             alias: Confirm Motion Lights is On
         sequence:
           - action: light.turn_off
